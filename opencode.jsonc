@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "memory-server": {
+      "type": "local",
+      "enabled": true,
+      "command": ["python", "main.py"],
+      "cwd": "."
+    }
+  },
+  "permission": {
+    "memory-server_*": "ask"
+  }
+}
