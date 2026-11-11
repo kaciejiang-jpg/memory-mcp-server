@@ -1,14 +1,19 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  //配置文件的说明书/规则参照
   "mcp": {
+    //注册MCP服务
     "memory-server": {
       "type": "local",
       "enabled": true,
+      //启用这个MCP Server
       "command": ["python", "main.py"],
       "cwd": "."
+      //指定启动服务时的工作目录（.表示在当前目录下启用MCP Server="cwd": "D:\memory-mcp-server"）
     }
   },
   "permission": {
+    //调用该MCP服务需要权限
     "memory-server_*": "ask"
   }
 }

@@ -18,13 +18,15 @@ MCP 基于 Python 异步 IO（asyncio）开发。MCP 客户端与服务端之间
 ## 目录结构
 
 ```text
-├── main.py      # MCP记忆服务端主程序
-├── mcp_client.py         # MCP测试客户端（参考官方SDK示例）
+├── main.py      # MCP记忆服务端主程序：核心功能实现
+├── mcp_client.py         # MCP测试客户端：独立测试程序
+├── memory_store.json     # 本地记忆数据文件，运行后自动生成
+├── .gitignore            # Git 忽略文件配置
 ├── .env                  # 环境变量，存放DeepSeek API_KEY
-├── memory_store.json     # 自动生成，记忆持久化存储文件
-├── memory_store.tmp      # 临时写入文件（程序运行产生，可忽略）
+├── .env.example          # 环境变量配置示例，不含真实密钥
 ├── requirements.txt      # 项目依赖
-└── README.md             # 项目说明文档
+├── README.md             # 项目说明文档
+└── opencode.json         # OpenCode的MCP服务配置
 ```
 
 ## 环境准备
