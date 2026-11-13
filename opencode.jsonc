@@ -9,7 +9,8 @@
       //启用这个MCP Server
       "command": ["python", "main.py"],
       "cwd": "."
-      //指定启动服务时的工作目录（.表示在当前目录下启用MCP Server="cwd": "D:\memory-mcp-server"）
+      //指定启动服务时的工作目录
+      // （.表示在当前目录下启用MCP Server等同于"cwd": "D:\memory-mcp-server"）
     }
   },
   "permission": {
