@@ -37,11 +37,16 @@ class MCPClient:
             cwd=str(PROJECT_DIR),  #工作目录（确保json文件路径正常）
             env=None
         )
+        '''客户端通过 StdioServerParameters 描述如何启动服务端，包括启动命令、服务端脚本路径和工作目录。
+           随后调用 stdio_client，根据这些参数启动服务端子进程，并建立标准输入和标准输出管道。
+           这样客户端和服务端就能够通过 STDIO 传递 MCP 协议消息。'''
 
-        # #①异步方法启动main.py，建立stdio管道  ②初始化mcp会话（保持服务端与客户端之间的通信会话，负责收发mcp工具调用消息）
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))  #用刚刚配置好的参数启动main.py子程序，创建stdio管道的读（接受mcp服务端发送的消息）写（向mcp服务端发送消息）通道
-        self.stdio, self.write = stdio_transport   #保存读写流到实例变量中
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))  #创建mcp协议会话（封装协议、两端自动握手、封装接口）
+        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))  
+        #用刚刚配置好的参数异步启动main.py子程序，创建stdio管道的读（接受mcp服务端发送的消息）写（向mcp服务端发送消息）通道
+        self.stdio, self.write = stdio_transport   
+        #保存读写流到实例变量中
+        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write)) 
+         #创建mcp协议会话（封装协议、两端自动握手、封装接口）
 
         # 初始化会话，获取可用工具列表
         await self.session.initialize()  #执行握手协议，完成两端初始化
@@ -148,14 +153,20 @@ async def main():
     client = MCPClient()  #创建 MCPClient 实例
     try:  #连接服务端，启动交互式命令循环
         print(f"正在启动 MCP Server：{SERVER_FILE}")  
-        await client.connect_to_server(str(SERVER_FILE))
-        await client.chat_loop()
+        await client.connect_to_server(str(SERVER_FILE)) #客户端主动建立与 MCP Server 的连接，并完成连接所需的准备工作。
+        # 1.检查传入的mcp_client.py文件路径是否是.py文件
+        # 2.配置启动服务端的参数server_params
+        # 3.启动服务端子进程并建立stdio管道:stdio_client(server_params)
+        # 4.初始化mcp会话
+        # 5.获取服务端工具列表并打印
+        await client.chat_loop()  
     finally:   #无论成败，最终一定执行资源清除释放资源
         await client.cleanup()
 
 if __name__ == "__main__":
+    #表示当前脚本是直接运行，而不是被其他python文件导入的，就执行以下代码：
     try:
-        asyncio.run(main())
+        asyncio.run(main())  #启动异步程序async def main():
     except KeyboardInterrupt:   #用户强行停止，打印提示词
         print("\n客户端已中断。")
     except Exception as error:  #外部捕获连接失败异常（服务端启动失败，main.py不存在）
