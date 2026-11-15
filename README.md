@@ -18,7 +18,7 @@ MCP 基于 Python 异步 IO（asyncio）开发。MCP 客户端与服务端之间
 ## 目录结构
 
 ```text
-├── main.py      # MCP记忆服务端主程序：核心功能实现
+├── main.py               # MCP记忆服务端主程序：核心功能实现
 ├── mcp_client.py         # MCP测试客户端：独立测试程序
 ├── memory_store.json     # 本地记忆数据文件，运行后自动生成
 ├── .gitignore            # Git 忽略文件配置
