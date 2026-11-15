@@ -11,16 +11,22 @@ from openai import OpenAI  #兼容openai接口格式，调用deepseek
 
 
 logger = logging.getLogger(__name__) #创造相应的日志模块，用于记录异常信息（可单独建立文件/终端显示）（当代码无语法错误时，内部出现问题则需要日志显示）
-load_dotenv()  #加载环境变量文件
+
+# ==========【修改点：固定脚本目录，env、记忆文件全部基于脚本绝对路径】==========
+SCRIPT_DIR = Path(__file__).resolve().parent  # 获取当前脚本所在文件夹绝对路径
+STORE_FILE = SCRIPT_DIR / "memory_store.json"  #__file__表示当前文件路径，resolve()返回绝对路径(完善成一个完整的路径)，parent / "memory_store.json"
+ENV_FILE = SCRIPT_DIR / ".env"  # .env文件固定在脚本同目录，不再跟着启动目录走
+load_dotenv(ENV_FILE)  #加载环境变量文件，传入绝对路径，跨目录启动也能读到.env
 
 client = OpenAI(
     api_key=os.getenv("API_KEY"),
     base_url="https://api.deepseek.com",
 )   #创建openai客户端，读取环境变量中的api key，连接deepseek服务器
 
-STORE_FILE = Path(__file__).resolve().parent / "memory_store.json"  #__file__表示当前文件路径，resolve()返回绝对路径(完善成一个完整的路径)，parent / "memory_store.json" 
 CATEGORIES = {"工作待办", "日程安排", "事件提醒", "普通记忆"} #规定输入记忆内容的分类，方便后续分析和检索
-mcp = FastMCP("Memory-MCP-Server")  #创建mcp服务端实例（容器），后面采用@mcp.tool()装饰器往里注册工具函数
+
+mcp = FastMCP("Memory-MCP-Server") 
+ #创建mcp服务端实例（容器），后面采用@mcp.tool()装饰器往里注册工具函数
 memories = []  #暂时存放记忆的列表，结束后存储到json文件中
 
 
@@ -35,9 +41,9 @@ def analyze_memory(text: str) -> tuple[str, list[str]]:
 - 日程安排：计划中的活动、会议或约会。
 - 事件提醒：用户明确要求提醒，或记录需要在未来提醒的事情。
 - 普通记忆：不属于以上三类。
-关键词提取 2 到 6 个，不要把相对日期词（如“明天”）作为标签，具体日期由程序添加。   
+关键词提取 2 到 6 个，不要把相对日期词（如“明天”）作为标签，具体日期由程序添加。  
 记忆：{text}  
-"""    #写给大模型的指令，规定输出只能是 JSON，只能选 4 类中的一种，提取 2~6 个关键词
+"""    #写给大模型的指令
     response = client.chat.completions.create(  #client前面创建的api客户端，chat对话类接口，completions处理多轮对话消息，create网络请求函数（模型名称、用户消息、系统提示词）
         model="deepseek-chat",
         messages=[{"role": "user", "content": prompt}],
@@ -91,7 +97,7 @@ def extract_date(text: str, today: date | None = None) -> date | None:  #日期�
                 resolved = date(today.year + 1, month, day_number) #解析日期小于目前日期，则自动推到下一年
             return resolved
         except ValueError:
-            return None   
+            return None  
 
     weekday_match = re.search(
         r"(下下周|下周|本周|这周|周|星期|礼拜)([一二三四五六日天])",
@@ -109,7 +115,7 @@ def extract_date(text: str, today: date | None = None) -> date | None:  #日期�
             resolved += timedelta(days=7)
         return resolved   #匹配中文星期描述，以周一为一周起点
 
-    return None    #文字里没有日期，则返回空
+    return None   #文字里没有日期，则返回空
 
 def load_memories():  #在json文件里加载之前存储的全部记忆，并加载到memories列表中，方便后续操作
     """Load saved memories from the project JSON file."""
@@ -122,7 +128,7 @@ def load_memories():  #在json文件里加载之前存储的全部记忆，并�
         data = json.load(file)
     if not isinstance(data, list):  #确保data为列表类型
         raise ValueError(f"{STORE_FILE} 必须包含 JSON 数组")   #异常处理
-    memories = data   
+    memories = data  
 
 
 def save_memories():
@@ -135,6 +141,8 @@ load_memories()  #直接调用加载函数，载入历史记忆
 
 
 @mcp.tool()  #装饰器，注册为mcp可调用工具
+#把原本普通的 Python 函数注册到 FastMCP 服务端，
+#让这些函数成为客户端可以发现和调用的 MCP Tools。
 def add_memory(content: str, tags: list[str] | None = None) -> str:  
     """Save a memory with automatically inferred category, tags, and date."""
 
@@ -226,12 +234,12 @@ def delete_memory(memory_id: str) -> str:
     remaining = [item for item in memories if item["memory_id"] != memory_id]  #遍历全部记忆，筛选出没被删除的记忆组成新列表
     if len(remaining) == len(memories):
         return f"未找到 id={memory_id} 的记忆，删除失败"
-    memories = remaining   
+    memories = remaining  
     save_memories()
     return f"成功删除记忆 {memory_id}"
 
 
-if __name__ == "__main__":    #运行main.py时，启动mcp服务端
+if __name__ == "__main__":   #运行main.py时，启动mcp服务端
     logging.getLogger("mcp.server").setLevel(logging.CRITICAL)  #设置日志级别为CRITICAL（只显示严重错误）logger按级别（debug、info、warning、error、critical）
     mcp.run(transport="stdio")   #使用stdio通信方式，客户端和服务端通过终端收发json消息，不需要网络端口啥的，在本机运行
 #sse走网络通信
